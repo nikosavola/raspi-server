@@ -1,0 +1,28 @@
+version: "3.7"
+services:
+    transmission:
+        image: jaymoulin/transmission
+        ports:
+            - 9091:9091
+            - 51413:51413
+        volumes:
+            - /media/b/Media/transmission/to_download:/to_download
+            - /media/b/Media/transmission/incomplete:/incomplete
+            - /media/b/Media/ebooks/addbooks:/completed
+            - /media/b/Media/transmission/config:/config
+        restart: unless-stopped
+        command: >
+            my-daemon
+            -c /to_download
+            --download-dir /completed
+            --no-auth
+            --blocklist
+            --allowed *.*.*.*
+            --incomplete-dir /incomplete
+            --dht
+            -Y
+            --utp
+            --no-portmap
+            --encryption-preferred
+            --foreground
+            --config-dir /config

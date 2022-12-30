@@ -1,0 +1,19 @@
+version: "2.1"
+services:
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:latest
+    container_name: calibre-web
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Helsinki
+      - DOCKER_MODS=linuxserver/mods:universal-calibre #optional
+      - OAUTHLIB_RELAX_TOKEN_SCOPE=1 #optional
+    volumes:
+      - /media/b/Media/ebooks/config:/config
+      - /media/b/Media/ebooks/library:/books
+      - /media/b/Media/ebooks/addbooks:/addbooks
+      - ./init:/init
+    ports:
+      - 8083:8083
+    restart: unless-stopped

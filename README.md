@@ -1,8 +1,14 @@
-# Raspberry Pi server
+# My Raspberry Pi server setup
 
-Documentation to install my Raspberry Pi server setup
+Documentation to install my Raspberry Pi server setup including
+* Photoprism + Syncthing for open-source alternative to Google Photos
+  * Automatic backup
+  * View online on any device
+* Calibre server for ebook library and management
+  * Website for management and viewing/downloading on any device
+  * Standard OPDS support for KOReader (Kobo) and Moon Reader (Android phone)
 
-## Photoprism + Syncthing
+## Photoprism + Syncthing (required as base image)
 
 1. Flash the [PhotoprismPi image](https://docs.photoprism.app/getting-started/raspberry-pi/microsd-image/)
 2. Install [Syncthing as a service](https://pimylifeup.com/raspberry-pi-syncthing/)
@@ -56,22 +62,27 @@ Documentation to install my Raspberry Pi server setup
     sudo systemctl start syncthing
     ```
     Access GUI with `192.168.x.x:8384`.
-3. Copy or adjust Photoprism settings from `photoprism.yml` to `/boot/firmware/docker-compose/photoprism/docker-compose.yml` and edit Syncthing correspondingly
+3. Copy or adjust Photoprism settings from `photoprism/docker-compose.yml` to `/boot/firmware/docker-compose/photoprism/docker-compose.yml` and edit Syncthing correspondingly
 4. Edit the crontab
     ```bash
     crontab -e
 
     0 6 * * * cd /boot/firmware/docker-compose/photoprism && docker-compose exec photoprism photoprism index
-    0 1 * * * wget --delete-after --no-check-certificate --no-proxy --user=EMAIL --password=PASSWORD https://www.dy.fi/nic/update?hostname=DOMAIN.dy.fi
-    @reboot sleep 300 && wget --delete-after --no-check-certificate --no-proxy --user=EMAIL --password=PASSWORD https://www.dy.fi/nic/update?hostname=DOMAIN.dy.fi
     ```
-    And add scheduled rebooting
+    And add scheduled rebooting with sudo privileges
     ```bash
     sudo crontab -e
 
     0 4 * * * /sbin/shutdown -r now
     ```
-5. Perform possible `fstab` changes
+5. (Optional) Refresh domain with a free domain service (`dy.fi` for Finnish IPs).
+    ```bash
+    crontab -e
+
+    0 1 * * * wget --delete-after --no-check-certificate --no-proxy --user=EMAIL --password=PASSWORD https://www.dy.fi/nic/update?hostname=DOMAIN.dy.fi
+    @reboot sleep 300 && wget --delete-after --no-check-certificate --no-proxy --user=EMAIL --password=PASSWORD https://www.dy.fi/nic/update?hostname=DOMAIN.dy.fi
+    ```
+6. Perform possible `fstab` changes for mounting USB hard-drive
     ```bash
     sudo /etc/fstab
 
@@ -83,10 +94,34 @@ Documentation to install my Raspberry Pi server setup
 
 ## Calibre server
 
-TODO with https://github.com/bcleonard/calibre-cops
+Implemented using Docker compose using [linuxserver/docker-calibre-web](https://github.com/linuxserver/docker-calibre-web).
+Copy the `calibre` folder in the repo to the server and consider the following steps.
+The modified `init` is required for having correct permissions to edit book metadata.
+
+1. Create the `config`, `library`, and `addbooks` folders under some folder `ebooks/` (`/media/b/Media/ebooks/` in example).
+2. Run `docker-compose up -d` in the `calibre` folder
+3. Schedule importing books
+    ```bash
+    crontab -e
+
+    0 3 * * * cd ~/calibre-web && docker-compose exec calibre-web calibredb add -r "/addbooks" --library-path="/books" && rm -rf /media/b/Media/ebooks/addbooks/*
+    ```
+4. Start using Calibre through the default port 8083. This can be forwarded in the Docker compose YML or in your router.
+    The OPDS API is located at `HOSTNAME:8083/opds`.
+
+### Transmission torrent client
+
+Transmission is setup to download torrents given in some folder, and move them to a given output folder upon completion.
+This is setup using Docker compose with [jaymoulin/transmission](https://hub.docker.com/r/jaymoulin/transmission/).
+
+1. Create the `to_download`, `incomplete`, and `config` folders under some folder `transmission/`. The output is setup as the `addbooks` folder in [Calibre server](#calibre-server).
+2. Run `docker-compose up -d` once.
+3. Edit the `rpc-whitelist` filed in `config/settings.json` to the following
+    ```json
+    "rpc-whitelist": "*.*.*.*",
+    ```
+4. Start using Transmission through the default ports 9091 and 51413. These can be forwarded in the Docker compose YML or in your router.
 
 
-
-### Transmission downloader
-
-https://hub.docker.com/r/jaymoulin/transmission/
+## Improvements
+* Implement Syncthing with Docker compose instead of manual install.
