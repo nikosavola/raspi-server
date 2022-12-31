@@ -118,6 +118,9 @@ This is setup using Docker compose with [jaymoulin/transmission](https://hub.doc
 2. Run `docker-compose up -d` once.
 3. Edit the `rpc-whitelist` filed in `config/settings.json` to the following
     ```json
+    "rpc-password": "{sha1 of password",
+    "rpc-username": "username"
+    ...
     "rpc-whitelist": "*.*.*.*",
     ```
 4. Start using Transmission through the default ports 9091 and 51413. These can be forwarded in the Docker compose YML or in your router.

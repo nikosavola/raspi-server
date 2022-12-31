@@ -15,7 +15,7 @@ services:
             my-daemon
             -c /to_download
             --download-dir /completed
-            --no-auth
+            --auth
             --blocklist
             --allowed *.*.*.*
             --incomplete-dir /incomplete
